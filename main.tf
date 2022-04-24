@@ -8,7 +8,8 @@ variable "tenancy_ocid" {}
 variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key" {}
-variable "ssh_public_key" {}
+variable "ssh_public_key1" {}
+variable "ssh_public_key2" {}
 
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
@@ -144,7 +145,7 @@ resource "oci_core_instance" "webserver01" {
   }
 
   metadata = {
-    ssh_authorized_keys = var.ssh_public_key
+    ssh_authorized_keys = var.ssh_public_key1
     user_data = base64encode(var.user-data-web01)
   }
 }
@@ -169,7 +170,7 @@ resource "oci_core_instance" "webserver02" {
   }
 
   metadata = {
-    ssh_authorized_keys = var.ssh_public_key
+    ssh_authorized_keys = var.ssh_public_key2
     user_data = base64encode(var.user-data-web02)
   }
 }
