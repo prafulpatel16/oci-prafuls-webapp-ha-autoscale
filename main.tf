@@ -163,7 +163,7 @@ resource "oci_core_instance" "webserver02" {
   shape               = "VM.Standard.E2.1.Micro"
   
   create_vnic_details {
-    subnet_id        = oci_core_subnet.prp_subnet_two.id
+    subnet_id        = oci_core_subnet.prp_subnet_one.id
     display_name     = "primaryvnic"
     assign_public_ip = true
     hostname_label   = "webserver02"
@@ -275,7 +275,6 @@ resource "oci_load_balancer" "prp-lb" {
 
   subnet_ids = [
     oci_core_subnet.prp_subnet_one.id,
-    oci_core_subnet.prp_subnet_two.id,
     
   ]
 
