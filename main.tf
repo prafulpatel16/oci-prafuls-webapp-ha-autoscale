@@ -147,7 +147,7 @@ resource "oci_core_instance" "webserver01" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key1
-    user_data = base64encode(var.user-data)
+    user_data = base64encode(var.user-data-web01)
     
   }
 }
@@ -173,31 +173,43 @@ resource "oci_core_instance" "webserver02" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key2
-    user_data = base64encode(var.user-data)
+    user_data = base64encode(var.user-data-web01)
    
   }
 }
 
-variable "user-data" {
+# User data Variable for deploying webapplication01
+variable "user-data-web01" {
   default = <<EOF
 #!/bin/bash -x
+
+# Purpose: Install apache webserver and copy praful's portfolio web application from github to apache webserver
+# Author: Praful Patel
+# Date & Time: Apr 24, 2022 
+# ------------------------------------------
+
 echo '################### webserver userdata begins #####################'
-touch ~opc/userdata.`date +%s`.start
+touch ~opc/userdata-web01.`date +%s`.start
 # echo '########## yum update all ###############'
-# yum update -y
+# sudo yum update -y
 echo '########## basic webserver ##############'
-yum install -y httpd
-systemctl enable  httpd.service
-systemctl start  httpd.service
-echo '<html><head></head><body><pre><code>' > /var/www/html/index.html
-hostname >> /var/www/html/index.html
-echo '' >> /var/www/html/index.html
-cat /etc/os-release >> /var/www/html/index.html
-echo '</code></pre></body></html>' >> /var/www/html/index.html
-firewall-offline-cmd --add-service=http
-systemctl enable  firewalld
-systemctl restart  firewalld
-touch ~opc/userdata.`date +%s`.finish
+sudo yum install -y httpd
+sudo systemctl enable  httpd.service
+sudo systemctl start  httpd.service
+
+# echo '########## install firewall ############'
+sudo firewall-offline-cmd --add-service=http
+sudo systemctl enable  firewalld
+sudo systemctl restart  firewalld  
+
+# echo '########## install git #############'
+sudo yum install git -y 
+
+# echo '########### Copy web application source code from GIT to apachwe root directory ##########'
+sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp1.git
+sudo cp -r prafuls-portfolio-webapp1/src/* /var/www/html/  
+
+touch ~opc/userdata-web01.`date +%s`.finish
 echo '################### webserver userdata ends #######################'
 EOF
 
