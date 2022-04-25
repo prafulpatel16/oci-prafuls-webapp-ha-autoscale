@@ -292,7 +292,7 @@ resource "oci_load_balancer_backend_set" "prp-lb-backend" {
 
   health_checker {
     port                = "80"
-    protocol            = "HTTP"
+    protocol            = "TCP"
     response_body_regex = ".*"
     url_path            = "/"
   }
