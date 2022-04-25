@@ -131,6 +131,7 @@ resource "oci_core_instance" "webserver01" {
   compartment_id      = var.compartment_ocid
   display_name        = "webserver01"
   shape               = "VM.Standard.E2.1.Micro"
+  user_data = templatefile("user_data_web01.tfpl")
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.prp_subnet_one.id
@@ -146,7 +147,7 @@ resource "oci_core_instance" "webserver01" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key1
-    user_data = base64encode(var.user-data-web01)
+    
   }
 }
 
@@ -156,6 +157,7 @@ resource "oci_core_instance" "webserver02" {
   compartment_id      = var.compartment_ocid
   display_name        = "webserver02"
   shape               = "VM.Standard.E2.1.Micro"
+  user_data = templatefile("user_data_web02.tfpl")
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.prp_subnet_two.id
@@ -171,84 +173,6 @@ resource "oci_core_instance" "webserver02" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key2
-    user_data = base64encode(var.user-data-web02)
+   
   }
-}
-
-# User data Variable for deploying webapplication01
-variable "user-data-web01" {
-  default = <<EOF
-#!/bin/bash -x
-
-# Purpose: Install apache webserver and copy praful's portfolio web application from github to apache webserver
-# Author: Praful Patel
-# Date & Time: Apr 24, 2022 
-# ------------------------------------------
-
-echo '################### webserver userdata begins #####################'
-touch ~opc/userdata-web01.`date +%s`.start
-# echo '########## yum update all ###############'
-# sudo yum update -y
-echo '########## basic webserver ##############'
-sudo yum install -y httpd
-sudo systemctl enable  httpd.service
-sudo systemctl start  httpd.service
-
-# echo '########## install firewall ############'
-sudo firewall-offline-cmd --add-service=http
-sudo firewall-cmd --permanent --zone=public --add-service=http
-sudo firewall-cmd --reload
-sudo systemctl enable  firewalld
-sudo systemctl restart  firewalld  
-
-# echo '########## install git #############'
-sudo yum install git -y 
-
-# echo '########### Copy web application source code from GIT to apachwe root directory ##########'
-sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp1.git
-sudo cp -r prafuls-portfolio-webapp1/src/* /var/www/html/  
-
-touch ~opc/userdata-web01.`date +%s`.finish
-echo '################### webserver userdata ends #######################'
-EOF
-
-}
-
-# User data Variable for deploying webapplication02
-variable "user-data-web02" {
-  default = <<EOF
-#!/bin/bash -x
-
-# Purpose: Install apache webserver and copy praful's portfolio web application from github to apache webserver
-# Author: Praful Patel
-# Date & Time: Apr 24, 2022 
-# ------------------------------------------
-
-echo '################### webserver userdata begins #####################'
-touch ~opc/userdata-web01.`date +%s`.start
-# echo '########## yum update all ###############'
-# sudo yum update -y
-echo '########## basic webserver ##############'
-sudo yum install -y httpd
-sudo systemctl enable  httpd.service
-sudo systemctl start  httpd.service
-
-# echo '########## install firewall ############'
-sudo firewall-offline-cmd --add-service=http
-sudo firewall-cmd --permanent --zone=public --add-service=http
-sudo firewall-cmd --reload
-sudo systemctl enable  firewalld
-sudo systemctl restart  firewalld  
-
-# echo '########## install git #############'
-sudo yum install git -y 
-
-# echo '########### Copy web application source code from GIT to apachwe root directory ##########'
-sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp2.git
-sudo cp -r prafuls-portfolio-webapp2/src/* /var/www/html/  
-
-touch ~opc/userdata-web01.`date +%s`.finish
-echo '################### webserver userdata ends #######################'
-EOF
-
 }
