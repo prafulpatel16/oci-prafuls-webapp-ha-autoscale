@@ -206,7 +206,7 @@ sudo systemctl restart  firewalld
 sudo yum install git -y 
 
 # echo '########### Copy web application source code from GIT to apachwe root directory ##########'
-sudo rm index.html
+
 sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp1.git
 sudo cp -r prafuls-portfolio-webapp1/src/* /var/www/html/  
 
@@ -237,8 +237,6 @@ sudo systemctl start  httpd.service
 
 # echo '########## install firewall ############'
 sudo firewall-offline-cmd --add-service=http
-sudo firewall-cmd --permanent --zone=public --add-service=http
-sudo firewall-cmd --reload
 sudo systemctl enable  firewalld
 sudo systemctl restart  firewalld  
 
