@@ -131,7 +131,7 @@ resource "oci_core_instance" "webserver01" {
   compartment_id      = var.compartment_ocid
   display_name        = "webserver01"
   shape               = "VM.Standard.E2.1.Micro"
-  user_data = templatefile("user_data_web01.tfpl")
+  user_data           = templatefile("user_data_web01.tfpl")
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.prp_subnet_one.id
@@ -157,7 +157,7 @@ resource "oci_core_instance" "webserver02" {
   compartment_id      = var.compartment_ocid
   display_name        = "webserver02"
   shape               = "VM.Standard.E2.1.Micro"
-  user_data = templatefile("user_data_web02.tfpl")
+  user_data           = templatefile("user_data_web02.tfpl")
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.prp_subnet_two.id
