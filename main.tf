@@ -275,6 +275,7 @@ resource "oci_load_balancer" "prp-lb" {
 
   subnet_ids = [
     oci_core_subnet.prp_subnet_one.id,
+    oci_core_subnet.prp_subnet_two.id,
     
   ]
 
