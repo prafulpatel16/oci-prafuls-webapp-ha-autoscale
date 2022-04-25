@@ -301,7 +301,7 @@ resource "oci_load_balancer_backend_set" "prp-lb-backset" {
 resource "oci_load_balancer_backend" "prp-lb-backend" {
   load_balancer_id = oci_load_balancer.prp-lb.id
   backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-  ip_address       = oci_core_instance.webserver01.private_ip
+  ip_address       = [oci_core_instance.webserver01.private_ip,oci_core_instance.webserver02.private_ip]
   port             = 80
   backup           = false
   drain            = false
