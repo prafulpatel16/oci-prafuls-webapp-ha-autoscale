@@ -10,7 +10,7 @@ variable "fingerprint" {}
 variable "private_key" {}
 variable "ssh_public_key1" {}
 variable "ssh_public_key2" {}
-variable "oci_core_public_ip" {}
+
   
 
 
