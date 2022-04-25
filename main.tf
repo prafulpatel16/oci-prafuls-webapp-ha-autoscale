@@ -55,8 +55,8 @@ resource "oci_core_virtual_network" "prp_vcn" {
 
 resource "oci_core_subnet" "prp_subnet_one" {
   cidr_block        = "10.1.20.0/24"
-  display_name      = "prp-websubnet1"
-  dns_label         = "prp-websubnet1"
+  display_name      = "prpsubnet1"
+  dns_label         = "prpsubnet1"
   security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
@@ -66,8 +66,8 @@ resource "oci_core_subnet" "prp_subnet_one" {
 
 resource "oci_core_subnet" "prp_subnet_two" {
   cidr_block        = "10.1.30.0/24"
-  display_name      = "prp-websubnet2"
-  dns_label         = "prp-websubnet2"
+  display_name      = "prpsubnet2"
+  dns_label         = "prpsubnet2"
   security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
