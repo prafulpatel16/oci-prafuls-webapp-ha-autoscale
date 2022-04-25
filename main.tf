@@ -10,6 +10,9 @@ variable "fingerprint" {}
 variable "private_key" {}
 variable "ssh_public_key1" {}
 variable "ssh_public_key2" {}
+variable "oci_core_public_ip" {}
+  
+
 
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
@@ -251,4 +254,65 @@ touch ~opc/userdata-web01.`date +%s`.finish
 echo '################### webserver userdata ends #######################'
 EOF
 
+}
+
+# reserve public ip
+resource "oci_core_public_ip" "prp_reserved_ip" {
+  compartment_id = var.compartment_ocid
+  lifetime       = "RESERVED"
+
+  lifecycle {
+    ignore_changes = [private_ip_id]
+  }
+}
+
+
+/* Load Balancer */
+# Add Details
+resource "oci_load_balancer" "prp-lb" {
+  shape          = "100Mbps"
+  compartment_id = var.compartment_ocid
+
+  subnet_ids = [
+    oci_core_subnet.prp_subnet_one.id,
+    oci_core_subnet.prp_subnet_one.id,
+  ]
+
+  display_name = "prp-lb"
+  reserved_ips {
+    id = oci_core_public_ip.prp_reserved_ip.id
+  }
+}
+
+# Choose Backend
+resource "oci_load_balancer_backend_set" "prp-lb-backend" {
+  name             = "prp-lb-back"
+  load_balancer_id = oci_load_balancer.prp-lb.id
+  policy           = "ROUND_ROBIN"
+
+  health_checker {
+    port                = "80"
+    protocol            = "HTTP"
+    response_body_regex = ".*"
+    url_path            = "/"
+  }
+}
+
+#Configure Listner
+resource "oci_load_balancer_listener" "prp-lb-listener" {
+  load_balancer_id         = oci_load_balancer.prp-lb.id
+  name                     = "http"
+  default_backend_set_name = oci_load_balancer_backend_set.prp-lb-backend.name
+  port                     = 80
+  protocol                 = "HTTP"
+  rule_set_names           = [oci_load_balancer_rule_set.test_rule_set.name]
+
+  connection_configuration {
+    idle_timeout_in_seconds = "2"
+  }
+}
+
+
+output "lb_public_ip" {
+  value = [oci_load_balancer.prp-lb.ip_address_details]
 }
