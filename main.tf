@@ -305,7 +305,7 @@ resource "oci_load_balancer_listener" "prp-lb-listener" {
   default_backend_set_name = oci_load_balancer_backend_set.prp-lb-backend.name
   port                     = 80
   protocol                 = "HTTP"
-  rule_set_names           = [oci_load_balancer_rule_set.test_rule_set.name]
+  
 
   connection_configuration {
     idle_timeout_in_seconds = "2"
