@@ -270,7 +270,7 @@ resource "oci_core_public_ip" "prp_reserved_ip" {
 /* Load Balancer */
 # Add Details
 resource "oci_load_balancer" "prp-lb" {
-  shape          = "100Mbps"
+  shape          = "10Mbps"
   compartment_id = var.compartment_ocid
 
   subnet_ids = [
@@ -301,6 +301,7 @@ resource "oci_load_balancer_backend_set" "prp-lb-backset" {
 resource "oci_load_balancer_backend" "prp-lb-backend" {
   load_balancer_id = oci_load_balancer.prp-lb.id
   backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
+  ip_address       = oci_core_instance.webserver01.private_ip
   port             = 80
   backup           = false
   drain            = false
@@ -311,7 +312,7 @@ resource "oci_load_balancer_backend" "prp-lb-backend" {
 resource "oci_load_balancer_listener" "prp-lb-listener" {
   load_balancer_id         = oci_load_balancer.prp-lb.id
   name                     = "http"
-  default_backend_set_name = oci_load_balancer_backend_set.prp-lb-backend.name
+  default_backend_set_name = oci_load_balancer_backend_set.prp-lb-backset.name
   port                     = 80
   protocol                 = "HTTP"
   
