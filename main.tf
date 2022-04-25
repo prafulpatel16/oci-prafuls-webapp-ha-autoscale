@@ -53,10 +53,10 @@ resource "oci_core_virtual_network" "prp_vcn" {
   dns_label      = "prpvcn"
 }
 
-resource "oci_core_subnet" "prp_subnet1" {
+resource "oci_core_subnet" "prp_subnet_one" {
   cidr_block        = "10.1.20.0/24"
-  display_name      = "prp-web-Subnet1"
-  dns_label         = "prp-web-Subnet1"
+  display_name      = "prp-web-Subnet-one"
+  dns_label         = "prp-web-Subnet-one"
   security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
@@ -64,10 +64,10 @@ resource "oci_core_subnet" "prp_subnet1" {
   dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
 }
 
-resource "oci_core_subnet" "prp_subnet2" {
+resource "oci_core_subnet" "prp_subnet_two" {
   cidr_block        = "10.1.30.0/24"
-  display_name      = "prp-web-Subnet2"
-  dns_label         = "prp-web-subnet2"
+  display_name      = "prp-web-Subnet-two"
+  dns_label         = "prp-web-subnet-two"
   security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
@@ -133,7 +133,7 @@ resource "oci_core_instance" "webserver01" {
   shape               = "VM.Standard.E2.1.Micro"
 
   create_vnic_details {
-    subnet_id        = oci_core_subnet.prp_subnet1.id
+    subnet_id        = oci_core_subnet.prp_subnet_one.id
     display_name     = "primaryvnic"
     assign_public_ip = true
     hostname_label   = "webserver01"
@@ -158,7 +158,7 @@ resource "oci_core_instance" "webserver02" {
   shape               = "VM.Standard.E2.1.Micro"
 
   create_vnic_details {
-    subnet_id        = oci_core_subnet.prp_subnet2.id
+    subnet_id        = oci_core_subnet.prp_subnet_two.id
     display_name     = "primaryvnic"
     assign_public_ip = true
     hostname_label   = "webserver02"
