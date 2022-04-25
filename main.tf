@@ -173,7 +173,7 @@ resource "oci_core_instance" "webserver02" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key2
-    user_data = base64encode(var.user-data-web01)
+    user_data = base64encode(var.user-data-web02)
    
   }
 }
@@ -206,8 +206,48 @@ sudo systemctl restart  firewalld
 sudo yum install git -y 
 
 # echo '########### Copy web application source code from GIT to apachwe root directory ##########'
+sudo rm index.html
 sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp1.git
 sudo cp -r prafuls-portfolio-webapp1/src/* /var/www/html/  
+
+touch ~opc/userdata-web01.`date +%s`.finish
+echo '################### webserver userdata ends ##########################'
+EOF
+
+}
+
+# User data Variable for deploying webapplication02
+variable "user-data-web02" {
+  default = <<EOF
+#!/bin/bash -x
+
+# Purpose: Install apache webserver and copy praful's portfolio web application from github to apache webserver
+# Author: Praful Patel
+# Date & Time: Apr 24, 2022 
+# ------------------------------------------
+
+echo '################### webserver userdata begins #####################'
+touch ~opc/userdata-web01.`date +%s`.start
+# echo '########## yum update all ###############'
+# sudo yum update -y
+echo '########## basic webserver ##############'
+sudo yum install -y httpd
+sudo systemctl enable  httpd.service
+sudo systemctl start  httpd.service
+
+# echo '########## install firewall ############'
+sudo firewall-offline-cmd --add-service=http
+sudo firewall-cmd --permanent --zone=public --add-service=http
+sudo firewall-cmd --reload
+sudo systemctl enable  firewalld
+sudo systemctl restart  firewalld  
+
+# echo '########## install git #############'
+sudo yum install git -y 
+
+# echo '########### Copy web application source code from GIT to apachwe root directory ##########'
+sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp2.git
+sudo cp -r prafuls-portfolio-webapp2/src/* /var/www/html/  
 
 touch ~opc/userdata-web01.`date +%s`.finish
 echo '################### webserver userdata ends #######################'
