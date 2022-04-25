@@ -284,9 +284,9 @@ resource "oci_load_balancer" "prp-lb" {
   }
 }
 
-# Choose Backend
-resource "oci_load_balancer_backend_set" "prp-lb-backend" {
-  name             = "prp-lb-back"
+# Choose BackendSet
+resource "oci_load_balancer_backend_set" "prp-lb-backset" {
+  name             = "prp-lb-backset"
   load_balancer_id = oci_load_balancer.prp-lb.id
   policy           = "ROUND_ROBIN"
 
@@ -297,7 +297,16 @@ resource "oci_load_balancer_backend_set" "prp-lb-backend" {
     url_path            = "/"
   }
 }
-
+# Create BAckend
+resource "oci_load_balancer_backend" "prp-lb-backend" {
+  load_balancer_id = oci_load_balancer.prp-lb.id
+  backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
+  port             = 80
+  backup           = false
+  drain            = false
+  offline          = false
+  weight           = 1
+}
 #Configure Listner
 resource "oci_load_balancer_listener" "prp-lb-listener" {
   load_balancer_id         = oci_load_balancer.prp-lb.id
