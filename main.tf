@@ -131,7 +131,7 @@ resource "oci_core_instance" "webserver01" {
   compartment_id      = var.compartment_ocid
   display_name        = "webserver01"
   shape               = "VM.Standard.E2.1.Micro"
-  user_data           = templatefile("user_data_web01.tfpl")
+
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.prp_subnet_one.id
@@ -147,6 +147,7 @@ resource "oci_core_instance" "webserver01" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key1
+    user_data           = templatefile("user_data_web01.tfpl")
     
   }
 }
@@ -157,8 +158,7 @@ resource "oci_core_instance" "webserver02" {
   compartment_id      = var.compartment_ocid
   display_name        = "webserver02"
   shape               = "VM.Standard.E2.1.Micro"
-  user_data           = templatefile("user_data_web02.tfpl")
-
+  
   create_vnic_details {
     subnet_id        = oci_core_subnet.prp_subnet_two.id
     display_name     = "primaryvnic"
@@ -173,6 +173,8 @@ resource "oci_core_instance" "webserver02" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key2
+    user_data           = templatefile("user_data_web02.tfpl")
+
    
   }
 }
