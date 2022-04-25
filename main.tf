@@ -57,10 +57,10 @@ resource "oci_core_subnet" "prp_subnet-1" {
   cidr_block        = "10.1.20.0/24"
   display_name      = "prp-web-Subnet1"
   dns_label         = "prp-web-Subnet1"
-  security_list_ids = [oci_core_security_list.tcb_security_list.id]
+  security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
-  route_table_id    = oci_core_route_table.tcb_route_table.id
+  route_table_id    = oci_core_route_table.prp_route_table.id
   dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
 }
 
@@ -68,20 +68,20 @@ resource "oci_core_subnet" "prp_subnet-2" {
   cidr_block        = "10.1.30.0/24"
   display_name      = "prp-web-Subnet2"
   dns_label         = "prp-web-subnet2"
-  security_list_ids = [oci_core_security_list.tcb_security_list.id]
+  security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
-  route_table_id    = oci_core_route_table.tcb_route_table.id
+  route_table_id    = oci_core_route_table.prp_route_table.id
   dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
 }
 
-resource "oci_core_internet_gateway" "tcb_internet_gateway" {
+resource "oci_core_internet_gateway" "prp_internet_gateway" {
   compartment_id = var.compartment_ocid
   display_name   = "prpIGW"
   vcn_id         = oci_core_virtual_network.prp_vcn.id
 }
 
-resource "oci_core_route_table" "tcb_route_table" {
+resource "oci_core_route_table" "prp_route_table" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_virtual_network.prp_vcn.id
   display_name   = "prpRouteTable"
@@ -89,7 +89,7 @@ resource "oci_core_route_table" "tcb_route_table" {
   route_rules {
     destination       = "0.0.0.0/0"
     destination_type  = "CIDR_BLOCK"
-    network_entity_id = oci_core_internet_gateway.tcb_internet_gateway.id
+    network_entity_id = oci_core_internet_gateway.prp_internet_gateway.id
   }
 }
 
