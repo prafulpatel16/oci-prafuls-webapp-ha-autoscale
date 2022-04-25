@@ -297,11 +297,22 @@ resource "oci_load_balancer_backend_set" "prp-lb-backset" {
     url_path            = "/"
   }
 }
-# Create BAckend
-resource "oci_load_balancer_backend" "prp-lb-backend" {
+# Create Backend 1
+resource "oci_load_balancer_backend" "prp-lb-backend1" {
   load_balancer_id = oci_load_balancer.prp-lb.id
   backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-  ip_address       = [oci_core_instance.webserver01.private_ip,oci_core_instance.webserver02.private_ip]
+  ip_address       = oci_core_instance.webserver01.private_ip
+  port             = 80
+  backup           = false
+  drain            = false
+  offline          = false
+  weight           = 1
+}
+# Create Backend 2
+resource "oci_load_balancer_backend" "prp-lb-backend2" {
+  load_balancer_id = oci_load_balancer.prp-lb.id
+  backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
+  ip_address       = oci_core_instance.webserver02.private_ip
   port             = 80
   backup           = false
   drain            = false
