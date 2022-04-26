@@ -13,7 +13,7 @@ variable "ssh_public_key2" {}
 
   
 
-
+#Define provider
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
   user_ocid = var.user_ocid
@@ -22,6 +22,7 @@ provider "oci" {
   region = var.region
 }
 
+#Region mapping
 variable "ad_region_mapping" {
   type = map(string)
 
@@ -60,17 +61,6 @@ resource "oci_core_subnet" "prp_subnet_one" {
   cidr_block        = "10.1.20.0/24"
   display_name      = "prpsubnet1"
   dns_label         = "prpsubnet1"
-  security_list_ids = [oci_core_security_list.prp_security_list.id]
-  compartment_id    = var.compartment_ocid
-  vcn_id            = oci_core_virtual_network.prp_vcn.id
-  route_table_id    = oci_core_route_table.prp_route_table.id
-  dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
-}
-
-resource "oci_core_subnet" "prp_subnet_two" {
-  cidr_block        = "10.1.30.0/24"
-  display_name      = "prpsubnet2"
-  dns_label         = "prpsubnet2"
   security_list_ids = [oci_core_security_list.prp_security_list.id]
   compartment_id    = var.compartment_ocid
   vcn_id            = oci_core_virtual_network.prp_vcn.id
@@ -127,66 +117,151 @@ resource "oci_core_security_list" "prp_security_list" {
   }
 }
 
+# Create instance congifurations
+resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
+  compartment_id = var.compartment_ocid
+  display_name   = "prpInstanceConfiguration"
 
-#webserver01
-resource "oci_core_instance" "webserver01" {
-  availability_domain = data.oci_identity_availability_domain.ad.name
-  compartment_id      = var.compartment_ocid
-  display_name        = "webserver01"
-  shape               = "VM.Standard.E2.1.Micro"
+  instance_details {
+    instance_type = "compute"
 
+    launch_details {
+      compartment_id = var.compartment_ocid
+      ipxe_script    = "ipxeScript"
+      shape          = var.instance_shape
+      display_name   = "prpInstanceConfigurationLaunchDetails"
 
-  create_vnic_details {
-    subnet_id        = oci_core_subnet.prp_subnet_one.id
-    display_name     = "primaryvnic"
-    assign_public_ip = true
-    hostname_label   = "webserver01"
-  }
+      create_vnic_details {
+        assign_public_ip       = true
+        display_name           = "prpInstanceConfigurationVNIC"
+        skip_source_dest_check = false
+        subnet_id              = oci_core_subnet.prp_subnet_one.id
+      }
 
-  source_details {
-    source_type = "image"
-    source_id   = var.images[var.region]
-  }
+      extended_metadata = {
+        some_string   = "stringA"
+        nested_object = "{\"some_string\": \"stringB\", \"object\": {\"some_string\": \"stringC\"}}"
+        ssh_authorized_keys = var.ssh_public_key1
+        user_data = base64encode(var.user-data-web01)
+      }
 
-  metadata = {
-    ssh_authorized_keys = var.ssh_public_key1
-    user_data = base64encode(var.user-data-web01)
-    
+      source_details {
+        source_type = "image"
+        image_id    = var.images[var.region]
+      }
+    }
   }
 }
 
-#webserver02
-resource "oci_core_instance" "webserver02" {
-  availability_domain = data.oci_identity_availability_domain.ad.name
-  compartment_id      = var.compartment_ocid
-  display_name        = "webserver02"
-  shape               = "VM.Standard.E2.1.Micro"
+# Create instance pool
+
+resource "oci_core_instance_pool" "prpInstancePool" {
+  compartment_id            = var.compartment_ocid
+  instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
+  size                      = 2
+  state                     = "RUNNING"
+  display_name              = "prpInstancePool"
+
+  placement_configurations {
+    availability_domain = data.oci_identity_availability_domain.ad.name
+    fault_domains = [
+      "FAULT-DOMAIN-1"]
+    primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
+  }
+
+  load_balancers {
+    #Required
+    backend_set_name = oci_load_balancer_backend_set.prp-lb-backset.name
+    load_balancer_id = oci_load_balancer.prp-lb.id
+    port = 80
+    vnic_selection = "primaryvnic"  
+  }
+  lifecycle {
+    ignore_changes = [size]
+  }
   
-  create_vnic_details {
-    subnet_id        = oci_core_subnet.prp_subnet_one.id
-    display_name     = "primaryvnic"
-    assign_public_ip = true
-    hostname_label   = "webserver02"
+}
+
+data "oci_core_instance_configuration" "prpInstanceConfiguration" {
+  instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
+}
+
+data "oci_core_instance_pool" "prpInstancePool" {
+  instance_pool_id = oci_core_instance_pool.prpInstancePool.id
+}
+
+data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_balancer_attachment" {
+  instance_pool_id                          = oci_core_instance_pool.prpInstancePool.id
+  instance_pool_load_balancer_attachment_id = oci_core_instance_pool.prpInstancePool.load_balancers[0].id
+}
+
+
+resource "oci_autoscaling_auto_scaling_configuration" "prpAutoScalingConfiguration" {
+  compartment_id       = var.compartment_ocid
+  cool_down_in_seconds = "300"
+  display_name         = "prpAutoScalingConfiguration"
+  is_enabled           = "true"
+
+  policies {
+    capacity {
+      initial = "2"
+      max     = "4"
+      min     = "2"
+    }
+
+    display_name = "TFPolicy"
+    policy_type  = "threshold"
+
+    rules {
+      action {
+        type  = "CHANGE_COUNT_BY"
+        value = "1"
+      }
+
+      display_name = "TFScaleOutRule"
+
+      metric {
+        metric_type = "CPU_UTILIZATION"
+
+        threshold {
+          operator = "GT"
+          value    = "90"
+        }
+      }
+    }
+
+    rules {
+      action {
+        type  = "CHANGE_COUNT_BY"
+        value = "-1"
+      }
+
+      display_name = "TFScaleInRule"
+
+      metric {
+        metric_type = "CPU_UTILIZATION"
+
+        threshold {
+          operator = "LT"
+          value    = "1"
+        }
+      }
+    }
   }
 
-  source_details {
-    source_type = "image"
-    source_id   = var.images[var.region]
-  }
-
-  metadata = {
-    ssh_authorized_keys = var.ssh_public_key2
-    user_data = base64encode(var.user-data-web02)
-   
+  auto_scaling_resources {
+    id   = oci_core_instance_pool.prpInstancePool.id
+    type = "instancePool"
   }
 }
+
 
 # User data Variable for deploying webapplication01
 variable "user-data-web01" {
   default = <<EOF
 #!/bin/bash -x
 
-# Purpose: Install apache webserver and copy praful's portfolio web application from github to apache webserver
+# Purpose: Install apache webserver, Copy Praful's portfolio web application source code from github to apache webserver root
 # Author: Praful Patel
 # Date & Time: Apr 24, 2022 
 # ------------------------------------------
@@ -219,42 +294,6 @@ EOF
 
 }
 
-# User data Variable for deploying webapplication02
-variable "user-data-web02" {
-  default = <<EOF
-#!/bin/bash -x
-
-# Purpose: Install apache webserver and copy praful's portfolio web application from github to apache webserver
-# Author: Praful Patel
-# Date & Time: Apr 24, 2022 
-# ------------------------------------------
-
-echo '################### webserver userdata begins #####################'
-touch ~opc/userdata-web01.`date +%s`.start
-# echo '########## yum update all ###############'
-# sudo yum update -y
-echo '########## basic webserver ##############'
-sudo yum install -y httpd
-sudo systemctl enable  httpd.service
-sudo systemctl start  httpd.service
-
-# echo '########## install firewall ############'
-sudo firewall-offline-cmd --add-service=http
-sudo systemctl enable  firewalld
-sudo systemctl restart  firewalld  
-
-# echo '########## install git #############'
-sudo yum install git -y 
-
-# echo '########### Copy web application source code from GIT to apachwe root directory ##########'
-sudo git clone https://github.com/prafulpatel16/prafuls-portfolio-webapp2.git
-sudo cp -r prafuls-portfolio-webapp2/src/* /var/www/html/  
-
-touch ~opc/userdata-web01.`date +%s`.finish
-echo '################### webserver userdata ends #######################'
-EOF
-
-}
 
 # reserve public ip
 resource "oci_core_public_ip" "prp_reserved_ip" {
@@ -301,24 +340,14 @@ resource "oci_load_balancer_backend_set" "prp-lb-backset" {
 resource "oci_load_balancer_backend" "prp-lb-backend1" {
   load_balancer_id = oci_load_balancer.prp-lb.id
   backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-  ip_address       = oci_core_instance.webserver01.private_ip
+#  ip_address       = oci_core_instance.webserver01.private_ip
   port             = 80
   backup           = false
   drain            = false
   offline          = false
   weight           = 1
 }
-# Create Backend 2
-resource "oci_load_balancer_backend" "prp-lb-backend2" {
-  load_balancer_id = oci_load_balancer.prp-lb.id
-  backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-  ip_address       = oci_core_instance.webserver02.private_ip
-  port             = 80
-  backup           = false
-  drain            = false
-  offline          = false
-  weight           = 1
-}
+
 #Configure Listner
 resource "oci_load_balancer_listener" "prp-lb-listener" {
   load_balancer_id         = oci_load_balancer.prp-lb.id
