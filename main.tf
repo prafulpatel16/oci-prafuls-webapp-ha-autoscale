@@ -56,7 +56,7 @@ variable "ad_region_mapping" {
 }
 
 variable "ad_list" {
-  type = "list"
+  type = list(string)
   default = ["us-phoenix-1","us-ashburn-2","us-ashburn-3"]
 }
 
