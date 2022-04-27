@@ -9,7 +9,9 @@ variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key" {}
 variable "ssh_public_key" {}
-
+variable "instance_shape" {
+  default = "VM.Standard.E2.1.Micro"
+}
 
 #Define provider
 provider "oci" {
@@ -184,7 +186,7 @@ resource "oci_core_instance" "prp-template-instance" {
   availability_domain = data.oci_identity_availability_domain.ad.name
   compartment_id      = var.compartment_ocid
   display_name        = "prp-template-instance"
-  shape               = "VM.Standard.E2.1.Micro"
+  shape               = var.instance_shape
 
 
   create_vnic_details {
