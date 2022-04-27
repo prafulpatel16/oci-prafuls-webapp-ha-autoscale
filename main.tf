@@ -31,7 +31,7 @@ variable instance_fault_domain_2 {
 default = "FAULT-DOMAIN-2"
 }
 
-variable "availability_domain" {
+variable "availability_domains" {
   default = 3
 }
 
@@ -328,10 +328,10 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    count = "${length(var.ad_list)}"
-    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.ad_list[count.index], "name")}"
+    count = "${length(data.oci_identity_availability_domain.ad.availability_domains)}"
+    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domains[count.index], "name")}"
     fault_domains = [
-      var.instance_fault_domain_1, var.instance_fault_domain_2]
+    var.instance_fault_domain_1, var.instance_fault_domain_2]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
    
   }
@@ -479,3 +479,7 @@ data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_b
 output "lb_public_ip" {
   value = [oci_load_balancer.prp-lb.ip_address_details]
 }
+
+
+
+  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[1], "name")}"
