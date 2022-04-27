@@ -328,8 +328,8 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    count = "${length(data.oci_identity_availability_domain.ad.availability_domains)}"
-    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domains[count.index], "name")}"
+    count = "${length(data.oci_identity_availability_domain.ad.availability_domain)}"
+    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domain[count.index], "name")}"
     fault_domains = [
     var.instance_fault_domain_1, var.instance_fault_domain_2]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
