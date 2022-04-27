@@ -293,7 +293,7 @@ resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
         assign_public_ip       = true
         display_name           = "prpInstanceConfigurationVNIC"
         skip_source_dest_check = false
-        subnet_id              = [oci_core_subnet.prp_subnet_one.id, oci_core_subnet.prp_subnet_two.id]
+        subnet_id              = oci_core_subnet.prp_subnet_one.id
       }
 
       extended_metadata = {
