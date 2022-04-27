@@ -329,7 +329,7 @@ resource "oci_core_instance_pool" "prpInstancePool" {
 
   placement_configurations {
     count = "${length(var.ad_list)}"
-    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domain[count.index], "name")}"
+    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.ad_list[count.index], "name")}"
     fault_domains = [
       var.instance_fault_domain_1, var.instance_fault_domain_2]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
