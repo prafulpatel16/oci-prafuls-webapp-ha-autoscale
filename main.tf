@@ -31,6 +31,10 @@ variable instance_fault_domain_2 {
 default = "FAULT-DOMAIN-2"
 }
 
+variable "availability_domain" {
+  default = 3
+}
+
 #Define provider
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
