@@ -112,7 +112,7 @@ resource "oci_core_virtual_network" "prp_vcn" {
 
 #2. Create Subnet
 resource "oci_core_subnet" "prp_subnet_one" {
-  availability_domain = data.oci_identity_availability_domain.ad1.name
+  availability_domain = data.oci_identity_availability_domain.ad.name
   cidr_block        = "10.1.20.0/24"
   display_name      = "prpsubnet1"
   dns_label         = "prpsubnet1"
@@ -122,18 +122,6 @@ resource "oci_core_subnet" "prp_subnet_one" {
   route_table_id    = oci_core_route_table.prp_route_table.id
   dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
 }
-resource "oci_core_subnet" "prp_subnet_two" {
-  availability_domain = data.oci_identity_availability_domain.ad2.name
-  cidr_block        = "10.1.30.0/24"
-  display_name      = "prpsubnet2"
-  dns_label         = "prpsubnet1"
-  security_list_ids = [oci_core_security_list.prp_security_list.id]
-  compartment_id    = var.compartment_ocid
-  vcn_id            = oci_core_virtual_network.prp_vcn.id
-  route_table_id    = oci_core_route_table.prp_route_table.id
-  dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
-}
-
 
 #3. Create Internet Gateway
 resource "oci_core_internet_gateway" "prp_internet_gateway" {
@@ -344,7 +332,7 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    availability_domain = data.oci_identity_availability_domain.ad1.name 
+    availability_domain = data.oci_identity_availability_domain.ad.name 
     fault_domains = [
     var.instance_fault_domain_1, var.instance_fault_domain_2, var.instance_fault_domain_3]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
