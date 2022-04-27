@@ -318,7 +318,8 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    availability_domain = data.oci_identity_availability_domain.ad.name
+    count = "${length(data.oci_identity_availability_domain.ad.availability_domains)}" 
+    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domains[count.index], "name")}"
     fault_domains = [
       var.instance_fault_domain_1, var.instance_fault_domain_2]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
@@ -332,28 +333,9 @@ resource "oci_core_instance_pool" "prpInstancePool" {
     port = 80
     vnic_selection = "primaryvnic"  
   }
-  lifecycle {
-    ignore_changes = [size]
-  }
-  
+    
 }
 
-
-
-##################################################################################################################
-#Create datasets
-data "oci_core_instance_configuration" "prpInstanceConfiguration" {
-  instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
-}
-
-data "oci_core_instance_pool" "prpInstancePool" {
-  instance_pool_id = oci_core_instance_pool.prpInstancePool.id
-}
-
-data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_balancer_attachment" {
-  instance_pool_id                          = oci_core_instance_pool.prpInstancePool.id
-  instance_pool_load_balancer_attachment_id = oci_core_instance_pool.prpInstancePool.load_balancers[0].id
-}
 
 ###################################################################################################################
 #Auto scaling process
@@ -466,6 +448,22 @@ resource "oci_core_public_ip" "prp_reserved_ip" {
     ignore_changes = [private_ip_id]
   }
 }
+
+##################################################################################################################
+#Create datasets
+data "oci_core_instance_configuration" "prpInstanceConfiguration" {
+  instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
+}
+
+data "oci_core_instance_pool" "prpInstancePool" {
+  instance_pool_id = oci_core_instance_pool.prpInstancePool.id
+}
+
+data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_balancer_attachment" {
+  instance_pool_id                          = oci_core_instance_pool.prpInstancePool.id
+  instance_pool_load_balancer_attachment_id = oci_core_instance_pool.prpInstancePool.load_balancers[0].id
+}
+
 #################################################################################################################
 #Output variables
 output "lb_public_ip" {
