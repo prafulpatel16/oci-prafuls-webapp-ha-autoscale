@@ -344,7 +344,7 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    availability_domain = [data.oci_identity_availability_domain.ad1.name , data.oci_identity_availability_domain.ad1.name ]
+    availability_domain = [data.oci_identity_availability_domain.ad1.name] 
     fault_domains = [
     var.instance_fault_domain_1, var.instance_fault_domain_2, var.instance_fault_domain_3]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
