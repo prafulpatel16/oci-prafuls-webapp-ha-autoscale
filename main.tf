@@ -24,6 +24,13 @@ variable "instance_shape" {
   default = "VM.Standard.E2.1.Micro"
 }
 
+variable instance_fault_domain_1 {
+default = "FAULT-DOMAIN-1"
+}
+variable instance_fault_domain_2 {
+default = "FAULT-DOMAIN-2"
+}
+
 #Define provider
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
@@ -321,9 +328,9 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "WebServer"
 
   placement_configurations {
-    availability_domain = [data.oci_identity_availability_domain.ad1.name, ata.oci_identity_availability_domain.ad1.name]
+    availability_domain = [data.oci_identity_availability_domain.ad1.name, data.oci_identity_availability_domain.ad1.name]
     fault_domains = [
-      FAULT-DOMAIN-1, FAULT-DOMAIN-2]
+      var.instance_fault_domain_1, var.instance_fault_domain_2]
     primary_subnet_id   = [oci_core_subnet.prp_subnet_one.id, oci_core_subnet.prp_subnet_two.id]
    
   }
