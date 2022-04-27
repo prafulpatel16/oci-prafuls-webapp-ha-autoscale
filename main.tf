@@ -8,8 +8,8 @@ variable "tenancy_ocid" {}
 variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key" {}
-variable "ssh_public_key1" {}
-variable "ssh_public_key2" {}
+variable "ssh_public_key" {}
+
 
   
 
@@ -141,7 +141,7 @@ resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
       extended_metadata = {
         some_string   = "stringA"
         nested_object = "{\"some_string\": \"stringB\", \"object\": {\"some_string\": \"stringC\"}}"
-        ssh_authorized_keys = var.ssh_public_key1
+        ssh_authorized_keys = var.ssh_public_key
         user_data = base64encode(var.user-data-web01)
       }
 
@@ -225,7 +225,7 @@ resource "oci_autoscaling_auto_scaling_configuration" "prpAutoScalingConfigurati
 
         threshold {
           operator = "GT"
-          value    = "90"
+          value    = "60"
         }
       }
     }
