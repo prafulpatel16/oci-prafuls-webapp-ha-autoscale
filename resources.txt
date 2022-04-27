@@ -9,3 +9,4 @@ https://www.oraclecloudadmin.com/2020/05/oci-compute-instance-autoscaling_21.htm
 
 https://www.youtube.com/watch?v=2A9tq3rDkVM
 
+https://docs.oracle.com/en-us/iaas/Content/ResourceManager/Tasks/terraform-referencing-availability-domains.htm

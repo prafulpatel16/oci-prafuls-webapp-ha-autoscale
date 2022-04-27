@@ -50,10 +50,16 @@ variable "ad_region_mapping" {
 
   default = {
     us-phoenix-1 = 1
-    us-ashburn-1 = 1
-    sa-saopaulo-1 = 1
+    us-ashburn-1 = 2
+    sa-saopaulo-1 = 3
   }
 }
+
+variable "ad_list" {
+  type = "list"
+  default = ["us-phoenix-1","us-ashburn-2","us-ashburn-3"]
+}
+
 
 # Image mapping
 variable "images" {
@@ -322,8 +328,8 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    count = "${length(data.oci_identity_availability_domain.ad.availability_domain)}" 
-    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domain[count.index], "name")}"
+    count = "${length(var.ad_list)}"
+    availability_domain = "${var.ad_list[count.index]}"
     fault_domains = [
       var.instance_fault_domain_1, var.instance_fault_domain_2]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
