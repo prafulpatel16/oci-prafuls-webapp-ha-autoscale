@@ -30,6 +30,9 @@ default = "FAULT-DOMAIN-1"
 variable instance_fault_domain_2 {
 default = "FAULT-DOMAIN-2"
 }
+variable instance_fault_domain_3{
+default = "FAULT-DOMAIN-3"
+}
 
 variable "availability_domains" {
   default = 3
@@ -57,7 +60,7 @@ variable "ad_region_mapping" {
 
 variable "ad_list" {
   type = list(string)
-  default = ["us-phoenix-1","us-ashburn-2","us-ashburn-3"]
+  default = ["APlT:PHX-AD-1","APlT:PHX-AD-1","APlT:PHX-AD-1"]
 }
 
 
@@ -109,6 +112,7 @@ resource "oci_core_virtual_network" "prp_vcn" {
 
 #2. Create Subnet
 resource "oci_core_subnet" "prp_subnet_one" {
+  availability_domain = data.oci_identity_availability_domain.ad1.name
   cidr_block        = "10.1.20.0/24"
   display_name      = "prpsubnet1"
   dns_label         = "prpsubnet1"
@@ -118,6 +122,18 @@ resource "oci_core_subnet" "prp_subnet_one" {
   route_table_id    = oci_core_route_table.prp_route_table.id
   dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
 }
+resource "oci_core_subnet" "prp_subnet_two" {
+  availability_domain = data.oci_identity_availability_domain.ad2.name
+  cidr_block        = "10.1.30.0/24"
+  display_name      = "prpsubnet2"
+  dns_label         = "prpsubnet1"
+  security_list_ids = [oci_core_security_list.prp_security_list.id]
+  compartment_id    = var.compartment_ocid
+  vcn_id            = oci_core_virtual_network.prp_vcn.id
+  route_table_id    = oci_core_route_table.prp_route_table.id
+  dhcp_options_id   = oci_core_virtual_network.prp_vcn.default_dhcp_options_id
+}
+
 
 #3. Create Internet Gateway
 resource "oci_core_internet_gateway" "prp_internet_gateway" {
@@ -226,7 +242,7 @@ resource "oci_load_balancer_listener" "prp-lb-listener" {
 resource "oci_load_balancer_backend" "prp-lb-backend1" {
   load_balancer_id = oci_load_balancer.prp-lb.id
   backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-  ip_address       = oci_core_instance.prp-template-instance.private_ip
+  ip_address       = oci_core_instance.prp-instance-template.private_ip
   port             = 80
   backup           = false
   drain            = false
@@ -244,10 +260,10 @@ resource "oci_load_balancer_backend" "prp-lb-backend1" {
 #source: https://github.com/oracle/terraform-provider-oci/blob/master/examples/compute/instance_pool/instance_pool.tf
 
 #1 Instance template
-resource "oci_core_instance" "prp-template-instance" {
+resource "oci_core_instance" "prp-instance-template" {
   availability_domain = data.oci_identity_availability_domain.ad.name
   compartment_id      = var.compartment_ocid
-  display_name        = "prp-template-instance"
+  display_name        = "Webserver01"
   shape               = var.instance_shape
 
 
@@ -273,7 +289,7 @@ resource "oci_core_instance" "prp-template-instance" {
 #2.Create custom image from instance-template
 resource "oci_core_image" "prp_custom_image" {
   compartment_id = var.compartment_ocid
-  instance_id    = oci_core_instance.prp-template-instance.id
+  instance_id    = oci_core_instance.prp-instance-template.id
   launch_mode    = "NATIVE"
 
   timeouts {
@@ -282,7 +298,7 @@ resource "oci_core_image" "prp_custom_image" {
 }
 
 
-#3.Create instance congifurations
+#3.Create instance configurations
 resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
   compartment_id = var.compartment_ocid
   display_name   = "prpInstanceConfiguration"
@@ -328,10 +344,9 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   display_name              = "Webserver"
 
   placement_configurations {
-    count = "${length(data.oci_identity_availability_domain.ad.availability_domain)}"
-    availability_domain = "${lookup(data.oci_identity_availability_domain.ad.availability_domain[count.index], "name")}"
+    availability_domain = [data.oci_identity_availability_domain.ad1.name , data.oci_identity_availability_domain.ad1.name ]
     fault_domains = [
-    var.instance_fault_domain_1, var.instance_fault_domain_2]
+    var.instance_fault_domain_1, var.instance_fault_domain_2, var.instance_fault_domain_3]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
    
   }
