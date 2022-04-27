@@ -11,8 +11,6 @@ variable "private_key" {}
 variable "ssh_public_key" {}
 
 
-  
-
 #Define provider
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
@@ -116,6 +114,108 @@ resource "oci_core_security_list" "prp_security_list" {
     }
   }
 }
+# Load Balancer Components:
+#1.Add details
+#2.Create Backendset
+#3.Configure Listner
+#4.Create Backend1
+
+/* Load Balancer */
+#1. Add Details
+resource "oci_load_balancer" "prp-lb" {
+  shape          = "10Mbps"
+  compartment_id = var.compartment_ocid
+
+  subnet_ids = [
+    oci_core_subnet.prp_subnet_one.id,
+    
+  ]
+
+  display_name = "prp-lb"
+  reserved_ips {
+    id = oci_core_public_ip.prp_reserved_ip.id
+  }
+}
+
+#2. Choose BackendSet
+resource "oci_load_balancer_backend_set" "prp-lb-backset" {
+  name             = "prp-lb-backset"
+  load_balancer_id = oci_load_balancer.prp-lb.id
+  policy           = "ROUND_ROBIN"
+
+  health_checker {
+    port                = "80"
+    protocol            = "TCP"
+    response_body_regex = ".*"
+    url_path            = "/"
+  }
+}
+
+#3.Configure Listner
+resource "oci_load_balancer_listener" "prp-lb-listener" {
+  load_balancer_id         = oci_load_balancer.prp-lb.id
+  name                     = "http"
+  default_backend_set_name = oci_load_balancer_backend_set.prp-lb-backset.name
+  port                     = 80
+  protocol                 = "HTTP"
+  
+
+  connection_configuration {
+    idle_timeout_in_seconds = "2"
+  }
+}
+
+#4. Create Backend1
+resource "oci_load_balancer_backend" "prp-lb-backend1" {
+  load_balancer_id = oci_load_balancer.prp-lb.id
+  backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
+  ip_address       = oci_core_instance.prp-template-instance.private_ip
+  port             = 80
+  backup           = false
+  drain            = false
+  offline          = false
+  weight           = 1
+}
+
+# Instance configruation & Instance Pool process
+#source: https://github.com/oracle/terraform-provider-oci/blob/master/examples/compute/instance_pool/instance_pool.tf
+#prp-template-instance
+resource "oci_core_instance" "prp-template-instance" {
+  availability_domain = data.oci_identity_availability_domain.ad.name
+  compartment_id      = var.compartment_ocid
+  display_name        = "prp-template-instance"
+  shape               = "VM.Standard.E2.1.Micro"
+
+
+  create_vnic_details {
+    subnet_id        = oci_core_subnet.prp_subnet_one.id
+    display_name     = "primaryvnic"
+    assign_public_ip = true
+    hostname_label   = "prp-template-instance"
+  }
+
+  source_details {
+    source_type = "image"
+    source_id   = var.images[var.region]
+  }
+
+  metadata = {
+    ssh_authorized_keys = var.ssh_public_key
+    user_data = base64encode(var.user-data-web01)
+    
+  }
+}
+
+resource "oci_core_image" "prp_custom_image" {
+  compartment_id = var.compartment_ocid
+  instance_id    = oci_core_instance.prp-template-instance.id
+  launch_mode    = "NATIVE"
+
+  timeouts {
+    create = "30m"
+  }
+}
+
 
 # Create instance congifurations
 resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
@@ -141,13 +241,13 @@ resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
       extended_metadata = {
         some_string   = "stringA"
         nested_object = "{\"some_string\": \"stringB\", \"object\": {\"some_string\": \"stringC\"}}"
-        ssh_authorized_keys = var.ssh_public_key
-        user_data = base64encode(var.user-data-web01)
+        
+        
       }
 
       source_details {
         source_type = "image"
-        image_id    = var.images[var.region]
+        image_id    = oci_core_image.prp_custom_image.id
       }
     }
   }
@@ -182,6 +282,16 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   
 }
 
+# Test the instance pool instance
+resource "oci_core_instance_pool_instance" "test_instance_pool_instance" {
+  instance_pool_id = oci_core_instance_pool.prpInstancePool.id
+  instance_id = oci_core_instance.prp-template-instance.id
+  decrement_size_on_delete = true
+  auto_terminate_instance_on_delete = false
+}
+
+
+
 data "oci_core_instance_configuration" "prpInstanceConfiguration" {
   instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
 }
@@ -195,6 +305,8 @@ data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_b
   instance_pool_load_balancer_attachment_id = oci_core_instance_pool.prpInstancePool.load_balancers[0].id
 }
 
+
+#Auto scaling process
 
 resource "oci_autoscaling_auto_scaling_configuration" "prpAutoScalingConfiguration" {
   compartment_id       = var.compartment_ocid
@@ -302,63 +414,6 @@ resource "oci_core_public_ip" "prp_reserved_ip" {
 
   lifecycle {
     ignore_changes = [private_ip_id]
-  }
-}
-
-
-/* Load Balancer */
-# Add Details
-resource "oci_load_balancer" "prp-lb" {
-  shape          = "10Mbps"
-  compartment_id = var.compartment_ocid
-
-  subnet_ids = [
-    oci_core_subnet.prp_subnet_one.id,
-    
-  ]
-
-  display_name = "prp-lb"
-  reserved_ips {
-    id = oci_core_public_ip.prp_reserved_ip.id
-  }
-}
-
-# Choose BackendSet
-resource "oci_load_balancer_backend_set" "prp-lb-backset" {
-  name             = "prp-lb-backset"
-  load_balancer_id = oci_load_balancer.prp-lb.id
-  policy           = "ROUND_ROBIN"
-
-  health_checker {
-    port                = "80"
-    protocol            = "TCP"
-    response_body_regex = ".*"
-    url_path            = "/"
-  }
-}
-# Create Backend 1
-resource "oci_load_balancer_backend" "prp-lb-backend1" {
-  load_balancer_id = oci_load_balancer.prp-lb.id
-  backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-#  ip_address       = oci_core_instance.webserver01.private_ip
-  port             = 80
-  backup           = false
-  drain            = false
-  offline          = false
-  weight           = 1
-}
-
-#Configure Listner
-resource "oci_load_balancer_listener" "prp-lb-listener" {
-  load_balancer_id         = oci_load_balancer.prp-lb.id
-  name                     = "http"
-  default_backend_set_name = oci_load_balancer_backend_set.prp-lb-backset.name
-  port                     = 80
-  protocol                 = "HTTP"
-  
-
-  connection_configuration {
-    idle_timeout_in_seconds = "2"
   }
 }
 
