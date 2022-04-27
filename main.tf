@@ -482,4 +482,4 @@ output "lb_public_ip" {
 
 
 
-  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[1], "name")}"
+  
