@@ -188,7 +188,7 @@ resource "oci_load_balancer" "prp-lb" {
   compartment_id = var.compartment_ocid
 
   subnet_ids = [
-    oci_core_subnet.prp_subnet_one.id,
+    oci_core_subnet.prp_subnet_one.id
     
   ]
 
