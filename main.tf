@@ -34,9 +34,6 @@ variable instance_fault_domain_3{
 default = "FAULT-DOMAIN-3"
 }
 
-variable "availability_domains" {
-  default = 3
-}
 
 #Define provider
 provider "oci" {
@@ -58,11 +55,6 @@ variable "ad_region_mapping" {
   }
 }
 
-variable "ad_list" {
-  type = list(string)
-  default = ["APlT:PHX-AD-1","APlT:PHX-AD-1","APlT:PHX-AD-1"]
-}
-
 
 # Image mapping
 variable "images" {
@@ -81,16 +73,6 @@ variable "images" {
 data "oci_identity_availability_domain" "ad" {
   compartment_id = var.tenancy_ocid
   ad_number      = var.ad_region_mapping[var.region]
-}
-
-data "oci_identity_availability_domain" "ad1" {
-  compartment_id = var.tenancy_ocid // needs to be compartment_ocid if not using root compartment
-  ad_number      = 1
-}
-
-data "oci_identity_availability_domain" "ad2" {
-  compartment_id = var.tenancy_ocid // needs to be compartment_ocid if not using root compartment
-  ad_number      = 2
 }
 
 ################################################################################################################
@@ -285,16 +267,6 @@ resource "oci_core_image" "prp_custom_image" {
   }
 }
 
-# Gets the custom image that will be created by this Terraform config
-data "oci_core_images" "prp_custom_images" {
-  compartment_id = var.compartment_ocid
-
-  filter {
-    name   = "id"
-    values = [oci_core_image.prp_custom_image.id]
-  }
-}
-
 
 #3.Create instance configurations
 resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
@@ -486,6 +458,7 @@ data "oci_core_instance_configurations" "prpInstanceConfiguration" {
     values = [oci_core_instance_configuration.prpInstanceConfiguration.id]
   }
 }
+
 
 data "oci_core_instance_pool" "prpInstancePool" {
   instance_pool_id = oci_core_instance_pool.prpInstancePool.id
