@@ -285,6 +285,16 @@ resource "oci_core_image" "prp_custom_image" {
   }
 }
 
+# Gets the custom image that will be created by this Terraform config
+data "oci_core_images" "prp_custom_images" {
+  compartment_id = var.compartment_ocid
+
+  filter {
+    name   = "id"
+    values = [oci_core_image.prp_custom_image.id]
+  }
+}
+
 
 #3.Create instance configurations
 resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
