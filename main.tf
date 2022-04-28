@@ -446,6 +446,17 @@ resource "oci_core_public_ip" "prp_reserved_ip" {
 
 ##################################################################################################################
 #Create datasets
+# Gets the custom image that will be created by this Terraform config
+data "oci_core_images" "prp_custom_images" {
+  compartment_id = var.compartment_ocid
+
+  filter {
+    name   = "id"
+    values = [oci_core_image.prp_custom_image.id]
+  }
+}
+
+
 data "oci_core_instance_configuration" "prpInstanceConfiguration" {
   instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
 }
