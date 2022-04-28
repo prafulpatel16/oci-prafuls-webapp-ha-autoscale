@@ -488,7 +488,7 @@ data "oci_core_instance_pools" "prpInstancePool" {
 
   filter {
     name   = "id"
-    values = [oci_core_instance_pool.tprpInstancePool.id]
+    values = [oci_core_instance_pool.prpInstancePool.id]
   }
 }
 
