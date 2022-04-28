@@ -24,6 +24,20 @@ variable "instance_shape" {
   default = "VM.Standard.E2.1.Micro"
 }
 
+variable instance_fault_domain_1 {
+default = "FAULT-DOMAIN-1"
+}
+variable instance_fault_domain_2 {
+default = "FAULT-DOMAIN-2"
+}
+variable instance_fault_domain_3{
+default = "FAULT-DOMAIN-3"
+}
+
+variable "availability_domains" {
+  default = 3
+}
+
 #Define provider
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
@@ -39,10 +53,16 @@ variable "ad_region_mapping" {
 
   default = {
     us-phoenix-1 = 1
-    us-ashburn-1 = 1
-    sa-saopaulo-1 = 1
+    us-ashburn-1 = 2
+    sa-saopaulo-1 = 3
   }
 }
+
+variable "ad_list" {
+  type = list(string)
+  default = ["APlT:PHX-AD-1","APlT:PHX-AD-1","APlT:PHX-AD-1"]
+}
+
 
 # Image mapping
 variable "images" {
@@ -92,6 +112,7 @@ resource "oci_core_virtual_network" "prp_vcn" {
 
 #2. Create Subnet
 resource "oci_core_subnet" "prp_subnet_one" {
+  availability_domain = data.oci_identity_availability_domain.ad.name
   cidr_block        = "10.1.20.0/24"
   display_name      = "prpsubnet1"
   dns_label         = "prpsubnet1"
@@ -167,7 +188,7 @@ resource "oci_load_balancer" "prp-lb" {
   compartment_id = var.compartment_ocid
 
   subnet_ids = [
-    oci_core_subnet.prp_subnet_one.id,
+    oci_core_subnet.prp_subnet_one.id
     
   ]
 
@@ -209,7 +230,7 @@ resource "oci_load_balancer_listener" "prp-lb-listener" {
 resource "oci_load_balancer_backend" "prp-lb-backend1" {
   load_balancer_id = oci_load_balancer.prp-lb.id
   backendset_name  = oci_load_balancer_backend_set.prp-lb-backset.name
-  ip_address       = oci_core_instance.prp-template-instance.private_ip
+  ip_address       = oci_core_instance.prp-instance-template.private_ip
   port             = 80
   backup           = false
   drain            = false
@@ -227,10 +248,10 @@ resource "oci_load_balancer_backend" "prp-lb-backend1" {
 #source: https://github.com/oracle/terraform-provider-oci/blob/master/examples/compute/instance_pool/instance_pool.tf
 
 #1 Instance template
-resource "oci_core_instance" "prp-template-instance" {
+resource "oci_core_instance" "prp-instance-template" {
   availability_domain = data.oci_identity_availability_domain.ad.name
   compartment_id      = var.compartment_ocid
-  display_name        = "prp-template-instance"
+  display_name        = "Webserver01"
   shape               = var.instance_shape
 
 
@@ -256,7 +277,7 @@ resource "oci_core_instance" "prp-template-instance" {
 #2.Create custom image from instance-template
 resource "oci_core_image" "prp_custom_image" {
   compartment_id = var.compartment_ocid
-  instance_id    = oci_core_instance.prp-template-instance.id
+  instance_id    = oci_core_instance.prp-instance-template.id
   launch_mode    = "NATIVE"
 
   timeouts {
@@ -265,7 +286,7 @@ resource "oci_core_image" "prp_custom_image" {
 }
 
 
-#3.Create instance congifurations
+#3.Create instance configurations
 resource "oci_core_instance_configuration" "prpInstanceConfiguration" {
   compartment_id = var.compartment_ocid
   display_name   = "prpInstanceConfiguration"
@@ -308,12 +329,12 @@ resource "oci_core_instance_pool" "prpInstancePool" {
   instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
   size                      = 2
   state                     = "RUNNING"
-  display_name              = "prpInstancePool"
+  display_name              = "Webserver"
 
   placement_configurations {
-    availability_domain = data.oci_identity_availability_domain.ad.name
+    availability_domain = data.oci_identity_availability_domain.ad.name 
     fault_domains = [
-      FAULT-DOMAIN-1, FAULT-DOMAIN-2, FAULT-DOMAIN-3]
+    var.instance_fault_domain_1, var.instance_fault_domain_2, var.instance_fault_domain_3]
     primary_subnet_id   = oci_core_subnet.prp_subnet_one.id
    
   }
@@ -325,28 +346,9 @@ resource "oci_core_instance_pool" "prpInstancePool" {
     port = 80
     vnic_selection = "primaryvnic"  
   }
-  lifecycle {
-    ignore_changes = [size]
-  }
-  
+    
 }
 
-
-
-##################################################################################################################
-#Create datasets
-data "oci_core_instance_configuration" "prpInstanceConfiguration" {
-  instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
-}
-
-data "oci_core_instance_pool" "prpInstancePool" {
-  instance_pool_id = oci_core_instance_pool.prpInstancePool.id
-}
-
-data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_balancer_attachment" {
-  instance_pool_id                          = oci_core_instance_pool.prpInstancePool.id
-  instance_pool_load_balancer_attachment_id = oci_core_instance_pool.prpInstancePool.load_balancers[0].id
-}
 
 ###################################################################################################################
 #Auto scaling process
@@ -459,8 +461,41 @@ resource "oci_core_public_ip" "prp_reserved_ip" {
     ignore_changes = [private_ip_id]
   }
 }
+
+##################################################################################################################
+#Create datasets
+data "oci_core_instance_configuration" "prpInstanceConfiguration" {
+  instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
+}
+
+
+data "oci_core_instance_pool" "prpInstancePool" {
+  instance_pool_id = oci_core_instance_pool.prpInstancePool.id
+}
+
+data "oci_core_instance_pools" "prpInstancePool" {
+  compartment_id = var.compartment_ocid
+  display_name   = "Webserver"
+  state          = "RUNNING"
+
+  filter {
+    name   = "id"
+    values = [oci_core_instance_pool.prpInstancePool.id]
+  }
+}
+
+
+data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_balancer_attachment" {
+  instance_pool_id                          = oci_core_instance_pool.prpInstancePool.id
+  instance_pool_load_balancer_attachment_id = oci_core_instance_pool.prpInstancePool.load_balancers[0].id
+}
+
 #################################################################################################################
 #Output variables
 output "lb_public_ip" {
   value = [oci_load_balancer.prp-lb.ip_address_details]
 }
+
+
+
+  
