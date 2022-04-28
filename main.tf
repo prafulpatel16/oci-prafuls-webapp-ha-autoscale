@@ -18,8 +18,8 @@ variable "tenancy_ocid" {}
 variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key" {}
-variable "ssh_public_key1" {}
-variable "ssh_public_key2" {}
+variable "ssh_public_key" {}
+
 
 #Define provider
 provider "oci" {
@@ -165,7 +165,7 @@ resource "oci_core_instance" "webserver01" {
   }
 
   metadata = {
-    ssh_authorized_keys = var.ssh_public_key1
+    ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(var.user-data-web01)
     
   }
