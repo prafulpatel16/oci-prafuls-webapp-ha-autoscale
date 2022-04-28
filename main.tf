@@ -22,6 +22,12 @@ variable "ssh_public_key" {}
 variable "instance_shape" {
   default = "VM.Standard.E2.1.Micro"
 }
+variable instance_fault_domain_1 {
+default = "FAULT-DOMAIN-1"
+}
+variable instance_fault_domain_2 {
+default = "FAULT-DOMAIN-2"
+}
 
 
 #Define provider
