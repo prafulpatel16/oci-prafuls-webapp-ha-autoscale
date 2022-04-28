@@ -19,6 +19,9 @@ variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key" {}
 variable "ssh_public_key" {}
+variable "instance_shape" {
+  default = "VM.Standard.E2.1.Micro"
+}
 
 
 #Define provider
