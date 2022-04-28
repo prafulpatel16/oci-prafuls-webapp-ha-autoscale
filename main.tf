@@ -468,9 +468,30 @@ data "oci_core_instance_configuration" "prpInstanceConfiguration" {
   instance_configuration_id = oci_core_instance_configuration.prpInstanceConfiguration.id
 }
 
+data "oci_core_instance_configurations" "prpInstanceConfiguration_datasource" {
+  compartment_id = var.compartment_ocid
+
+  filter {
+    name   = "id"
+    values = [oci_core_instance_configuration.prpInstanceConfiguration.id]
+  }
+}
+
 data "oci_core_instance_pool" "prpInstancePool" {
   instance_pool_id = oci_core_instance_pool.prpInstancePool.id
 }
+
+data "oci_core_instance_pools" "prpInstancePool" {
+  compartment_id = var.compartment_ocid
+  display_name   = "Webserver"
+  state          = "RUNNING"
+
+  filter {
+    name   = "id"
+    values = [oci_core_instance_pool.tprpInstancePool.id]
+  }
+}
+
 
 data "oci_core_instance_pool_load_balancer_attachment" "prp_instance_pool_load_balancer_attachment" {
   instance_pool_id                          = oci_core_instance_pool.prpInstancePool.id
